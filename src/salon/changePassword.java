@@ -106,10 +106,9 @@ public class changePassword extends javax.swing.JFrame {
     }//GEN-LAST:event_formWindowActivated
 
     private void accountActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_accountActionPerformed
-  
-   try {
-    connectDB cdb = new connectDB();
-    Session sess = Session.getInstance();
+    try {
+       connectDB cdb = new connectDB();
+       Session sess = Session.getInstance();
 
     if (sess.getId() <= 0) { 
         JOptionPane.showMessageDialog(null, "Invalid session. Please log in again.");
@@ -118,7 +117,7 @@ public class changePassword extends javax.swing.JFrame {
 
     String query = "SELECT password FROM users WHERE id = ?";
     PreparedStatement stmt = cdb.getConnection().prepareStatement(query);
-    stmt.setInt(1, sess.getId()); 
+    stmt.setInt(1, sess.getId());
 
     ResultSet rs = stmt.executeQuery();
 
@@ -145,6 +144,21 @@ public class changePassword extends javax.swing.JFrame {
             return;
         }
 
+        if (passwordHasher.checkPassword(newPassword, storedHashedPassword)) {
+            JOptionPane.showMessageDialog(null, "New password cannot be the same as the old password!");
+            return;
+        }
+
+        if (newPassword.length() < 8) {
+            JOptionPane.showMessageDialog(null, "Password must be at least 8 characters long!");
+            return;
+        }
+
+        if (!newPassword.matches("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$")) {
+            JOptionPane.showMessageDialog(null, "Password must contain at least one uppercase letter, one lowercase letter, one digit, and one special character!");
+            return;
+        }
+
         String hashedNewPassword = passwordHasher.hashPassword(newPassword);
 
         String updateQuery = "UPDATE users SET password = ? WHERE id = ?";
@@ -153,6 +167,7 @@ public class changePassword extends javax.swing.JFrame {
         updateStmt.setInt(2, sess.getId());
 
         int rowsUpdated = updateStmt.executeUpdate();
+        
         updateStmt.close();
 
         if (rowsUpdated > 0) {
@@ -166,22 +181,23 @@ public class changePassword extends javax.swing.JFrame {
                 currentWindow.dispose();
             }
         } else {
-            JOptionPane.showMessageDialog(null, "Failed to update password!");
+                JOptionPane.showMessageDialog(null, "Failed to update password!");
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "No account found for the given ID.");
         }
-    } else {
-        JOptionPane.showMessageDialog(null, "No account found for the given ID.");
+
+       
+        rs.close();
+        stmt.close();
+        cdb.closeConnection();
+
+    } catch (SQLException ex) {
+        System.out.println("SQL Error: " + ex.getMessage());
+    } catch (Exception ex) { 
+        Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
     }
 
-    rs.close();
-    stmt.close();
-    cdb.closeConnection();
-} catch (SQLException ex) {
-    System.out.println("SQL Error: " + ex.getMessage());
-} catch (Exception ex) { 
-    Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ex);
-}
-
-     
     }//GEN-LAST:event_accountActionPerformed
 
     /**
